@@ -17,7 +17,7 @@ Implementation of "catchup" command.
 
 import logging
 from configparser import ConfigParser
-from time import sleep
+from time import sleep, time, localtime, strftime
 from typing import List
 
 from google.api_core.exceptions import NotFound
@@ -49,6 +49,9 @@ def load_command(buckets: List[str] = None,
         in an existing inventory table by truncating it before loading.
         (default: {False})
     """
+    start_time = time()
+    LOG.debug("Load start time: {}".
+              format(strftime("%Y-%m-%d %H:%M:%S", localtime(start_time))))
     config = get_config()
     gcs = get_gcs_client()
     table = get_table(TableDefinitions.INVENTORY,
@@ -91,6 +94,11 @@ def load_command(buckets: List[str] = None,
     LOG.info("Stats: \n\t%s", bucket_blob_counts)
     LOG.info("Total rows: \n\t%s",
              sum([v for _, v in bucket_blob_counts.items()]))
+    end_time = time()
+    LOG.debug("Load end time: {}".
+              format(strftime("%Y-%m-%d %H:%M:%S", localtime(end_time))))
+    LOG.info("Total load time: {:.2f} minutes".format((end_time - start_time)/60.0))
+
 
 
 def bucket_lister(config: ConfigParser, gcs: Client, bucket: Bucket,
