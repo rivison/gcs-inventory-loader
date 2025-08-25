@@ -59,6 +59,30 @@ class Table:
         query_job = bq_client.query(querytext)
         return query_job.result()
 
+    def truncate(self) -> bigquery.table.RowIterator:
+        """Removes all rows from the table but keeps schema and metadata.
+
+        Returns:
+            google.cloud.bigquery.table.RowIterator -- Result of the query.
+            Since this is a DDL query, this will always be empty if
+            it succeeded.
+
+        Raises:
+            google.cloud.exceptions.GoogleCloudError –- If the job failed.
+            concurrent.futures.TimeoutError –- If the job did not complete
+            in the default BigQuery job timeout.
+        """
+        bq_client = get_bq_client()
+
+        LOG.info("Truncating table %s", self.get_fully_qualified_name())
+
+        querytext = "TRUNCATE TABLE `{}`".format(self.get_fully_qualified_name())
+
+        LOG.debug("Running query: \n%s", querytext)
+
+        query_job = bq_client.query(querytext)
+        return query_job.result()
+
     def initialize(self) -> bigquery.table.RowIterator:
         """Creates, if not found, a table.
 

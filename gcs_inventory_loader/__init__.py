@@ -75,23 +75,30 @@ def init(config_file: str = "./default.cfg", log_level: str = None) -> None:
     help="A prefix to restrict the bucket listing(s) by. This is useful if you"
     " have a very large bucket and want to shard the listing work.",
     default=None)
+@click.option(
+    '--replace',
+    is_flag=True,
+    help="Truncate (empty) the inventory table before loading.")
 @click.argument('buckets', nargs=-1, required=False, default=None)
 @click.pass_context
 def load(context: object,
          buckets: List[str] = None,
-         prefix: str = None) -> None:
+         prefix: str = None,
+         replace: bool = False) -> None:
     """
     Build the inventory table with all objects in your bucket(s). The table
     will be named whatever you set to the INVENTORY_TABLE value in the
     configuration file. The table will be created if not found. If it is found,
-    records will be appended.
+    records will be appended unless --replace is specified.
 
     Optionally, you can provide a list of buckets (without gs://) to limit the
     scope. By default, all buckets in the configured project will be processed
     into the table.
+
+    Use --replace to truncate the inventory table before loading (if it exists).
     """
     init(**context.obj)
-    return load_command(buckets, prefix)
+    return load_command(buckets, prefix, replace)
 
 
 @main.command()

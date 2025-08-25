@@ -20,8 +20,9 @@ from configparser import ConfigParser
 from time import sleep
 from typing import List
 
-from google.cloud.storage import Bucket, Client
+from google.api_core.exceptions import NotFound
 from google.api_core.page_iterator import Page
+from google.cloud.storage import Bucket, Client
 
 from gcs_inventory_loader.bq.output import BigQueryOutput
 from gcs_inventory_loader.bq.tables import TableDefinitions, get_table
@@ -32,7 +33,9 @@ from gcs_inventory_loader.thread import BoundedThreadPoolExecutor
 LOG = logging.getLogger(__name__)
 
 
-def load_command(buckets: List[str] = None, prefix: str = None) -> None:
+def load_command(buckets: List[str] = None,
+                 prefix: str = None,
+                 replace: bool = False) -> None:
     """Implementation of the load command.
 
     This function dispatches each bucket listed into an executor thread for
@@ -42,13 +45,27 @@ def load_command(buckets: List[str] = None, prefix: str = None) -> None:
         buckets {[str]} -- A list of buckets to use instead of the
         project-wide bucket listing. (default: {None})
         prefix {str} -- A prefix to use when listing. (default: {None})
+        replace {bool} -- A boolean indicating whether to replace the records
+        in an existing inventory table by truncating it before loading.
+        (default: {False})
     """
     config = get_config()
     gcs = get_gcs_client()
+    table = get_table(TableDefinitions.INVENTORY,
+                      config.get("BIGQUERY", "INVENTORY_TABLE"))
+    if replace:
+        LOG.debug("Truncating inventory table before loading, if it exists...")
+        try:
+            table.truncate()
+        # Gracefully handle the case where the table does not exist
+        # BigQuery will raise a NotFound error, which we can safely ignore
+        except NotFound:
+            LOG.debug("Inventory table did not exist; continuing with load.")
+        except Exception as error:
+            LOG.error("Error truncating inventory table: %s", error)
+            raise error
     # Call this once to initialize.
-    _ = BigQueryOutput(
-        get_table(TableDefinitions.INVENTORY,
-                  config.get("BIGQUERY", "INVENTORY_TABLE")))
+    _ = BigQueryOutput(table)
 
     # if buckets is given, get each bucket object; otherwise, list all bucket
     # objects
