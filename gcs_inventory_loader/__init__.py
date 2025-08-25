@@ -25,7 +25,7 @@ import click
 from gcs_inventory_loader.cli.cat import cat_command
 from gcs_inventory_loader.cli.listen import listen_command
 from gcs_inventory_loader.cli.load import load_command
-from gcs_inventory_loader.config import config_to_string, set_config
+from gcs_inventory_loader.config import config_to_string, get_config, set_config
 from gcs_inventory_loader.utils import set_program_log_level
 
 warnings.filterwarnings(
@@ -69,6 +69,26 @@ def init(config_file: str = "./default.cfg", log_level: str = None) -> None:
 
 @main.command()
 @click.option(
+    '--gcs_project',
+    required=False,
+    help="Override GCS_PROJECT from the configuration file.",
+    default=None)
+@click.option(
+    '--bq_project',
+    required=False,
+    help="Override JOB_PROJECT from the configuration file.",
+    default=None)
+@click.option(
+    '--dataset_name',
+    required=False,
+    help="Override DATASET_NAME from the configuration file.",
+    default=None)
+@click.option(
+    '--inventory_table',
+    required=False,
+    help="Override INVENTORY_TABLE from the configuration file.",
+    default=None)
+@click.option(
     '-p',
     '--prefix',
     required=False,
@@ -82,6 +102,10 @@ def init(config_file: str = "./default.cfg", log_level: str = None) -> None:
 @click.argument('buckets', nargs=-1, required=False, default=None)
 @click.pass_context
 def load(context: object,
+         gcs_project: str = None,
+         bq_project: str = None,
+         dataset_name: str = None,
+         inventory_table: str = None,
          buckets: List[str] = None,
          prefix: str = None,
          replace: bool = False) -> None:
@@ -96,8 +120,33 @@ def load(context: object,
     into the table.
 
     Use --replace to truncate the inventory table before loading (if it exists).
+    Use --gcs_project to override GCS_PROJECT in config.
+    Use --bq_project to override JOB_PROJECT in config.
+    Use --dataset_name to override DATASET_NAME in config.
+    Use --inventory_table to override INVENTORY_TABLE in config.
     """
     init(**context.obj)
+    if gcs_project or bq_project or dataset_name or inventory_table:
+        config_to_override = get_config()
+        if gcs_project:
+            config_to_override.set("GCP",
+                                   "GCS_PROJECT",
+                                   gcs_project)
+        if bq_project:
+            config_to_override.set("BIGQUERY",
+                                   "JOB_PROJECT",
+                                   bq_project)
+        if dataset_name:
+            config_to_override.set("BIGQUERY",
+                                   "DATASET_NAME",
+                                   dataset_name)
+        if inventory_table:
+            config_to_override.set("BIGQUERY",
+                                   "INVENTORY_TABLE",
+                                   inventory_table)
+        print("\nConfiguration file overridden. Current values: \n{}".
+              format(config_to_string(config_to_override)),
+              file=sys.stderr)
     return load_command(buckets, prefix, replace)
 
 
