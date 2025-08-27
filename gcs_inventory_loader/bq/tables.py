@@ -50,9 +50,11 @@ class Table:
         """
         bq_client = get_bq_client()
 
-        LOG.info("Deleting table %s", self.get_fully_qualified_name())
+        full_table_id = self.get_fully_qualified_name()
 
-        querytext = "DROP TABLE `{}`".format(self.get_fully_qualified_name())
+        LOG.info("Deleting table %s", full_table_id)
+
+        querytext = "DROP TABLE `{}`".format(full_table_id)
 
         LOG.debug("Running query: \n%s", querytext)
 
@@ -74,9 +76,11 @@ class Table:
         """
         bq_client = get_bq_client()
 
-        LOG.info("Truncating table %s", self.get_fully_qualified_name())
+        full_table_id = self.get_fully_qualified_name()
 
-        querytext = "TRUNCATE TABLE `{}`".format(self.get_fully_qualified_name())
+        LOG.info("Truncating table %s", full_table_id)
+
+        querytext = "TRUNCATE TABLE `{}`".format(full_table_id)
 
         LOG.debug("Running query: \n%s", querytext)
 
@@ -103,13 +107,14 @@ class Table:
 
         bq_client = get_bq_client()
 
-        LOG.info("Creating table %s if not found.",
-                 self.get_fully_qualified_name())
+        full_table_id = self.get_fully_qualified_name()
+
+        LOG.info("Creating table %s if not found.", full_table_id)
 
         querytext = """
             CREATE TABLE IF NOT EXISTS `{}` (
             {}
-            )""".format(self.get_fully_qualified_name(), self.schema)
+            )""".format(full_table_id, self.schema)
 
         LOG.debug("Running query: \n%s", querytext)
 
