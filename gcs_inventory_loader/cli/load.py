@@ -69,6 +69,8 @@ def load_command(buckets: List[str] = None,
             raise error
     # Call this once to initialize.
     _ = BigQueryOutput(table)
+    # Set the table's 'updated' label to start date (from `start_time`)
+    table.set_label("updated", strftime("%Y-%m-%d", localtime(start_time)))
 
     # if buckets is given, get each bucket object; otherwise, list all bucket
     # objects

@@ -87,6 +87,26 @@ class Table:
         query_job = bq_client.query(querytext)
         return query_job.result()
 
+    def set_label(self, key: str, value: str) -> None:
+        """Adds or updates a label for the table.
+
+        Arguments:
+            key {str}: The key of the label.
+            value {str}: The value of the label.
+        """
+        bq_client = get_bq_client()
+
+        full_table_id = self.get_fully_qualified_name()
+
+        LOG.info("Setting '%s' label for table %s to '%s'",
+                 key, full_table_id, value)
+
+        table_obj = bq_client.get_table(full_table_id)
+        labels = table_obj.labels or {}
+        labels[key] = value
+        table_obj.labels = labels
+        bq_client.update_table(table_obj, ["labels"])
+
     def initialize(self) -> bigquery.table.RowIterator:
         """Creates, if not found, a table.
 
