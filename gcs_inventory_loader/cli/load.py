@@ -50,8 +50,9 @@ def load_command(buckets: List[str] = None,
         (default: {False})
     """
     start_time = time()
+    local_start = localtime(start_time)
     LOG.debug("Load start time: {}".
-              format(strftime("%Y-%m-%d %H:%M:%S", localtime(start_time))))
+              format(strftime("%Y-%m-%d %H:%M:%S", local_start)))
     config = get_config()
     gcs = get_gcs_client()
     table = get_table(TableDefinitions.INVENTORY,
@@ -70,7 +71,7 @@ def load_command(buckets: List[str] = None,
     # Call this once to initialize.
     _ = BigQueryOutput(table)
     # Set the table's 'updated' label to start date (from `start_time`)
-    table.set_label("updated", strftime("%Y-%m-%d", localtime(start_time)))
+    table.set_label("updated", strftime("%Y-%m-%d", local_start))
 
     # if buckets is given, get each bucket object; otherwise, list all bucket
     # objects
